@@ -1,0 +1,9 @@
+{
+  "name": "brick-buddy",
+  "private": true,
+  "description": "Olöf's Lego Girly Mission Control – static app plus one tiny sync API",
+  "license": "MIT",
+  "engines": { "node": ">=20" },
+  "dependencies": { "@neondatabase/serverless": "^1.2.0" },
+  "scripts": { "test": "node test/lib.test.js" }
+}

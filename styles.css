@@ -174,3 +174,13 @@ label.f { display: block; font-weight: 800; font-size: .85rem; margin: 0 0 4px; 
   .tabs a { font-size: .85rem }
   .page-title { font-size: 2.6rem }
 }
+
+/* sync */
+.syncpill { display: inline-block; margin: 6px 0 0; padding: 3px 10px; border: 2px solid var(--ink); border-radius: 999px; background: #fff; font-size: .78rem; font-weight: 800; }
+.syncpill[hidden] { display: none; }
+.syncpill[data-state="ok"] { background: #dff5e4; } .syncpill[data-state="offline"] { background: #fff3c2; } .syncpill[data-state="error"] { background: #ffd9d4; }
+.sync { margin: 10px 0 14px; } .sync h2 { font-size: 1.15rem; margin-bottom: 6px; } .sync p { margin: 6px 0; }
+.syncline { font-size: .95rem; }
+.code { font-size: 1.15rem; font-weight: 900; letter-spacing: .06em; line-height: 1.6; padding: 10px 12px; background: var(--soft); border: 3px dashed var(--ink); border-radius: 14px; user-select: all; -webkit-user-select: all; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+.warn { font-weight: 800; font-size: .88rem; color: #8a1c14; background: #fff3c2; border: 2px solid var(--ink); border-radius: 12px; padding: 8px 10px; }
+.code span { white-space: nowrap; }

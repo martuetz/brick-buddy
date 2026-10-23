@@ -17,14 +17,15 @@
 
   // ---------- storage ----------
   function uid() { return Math.random().toString(36).slice(2, 10) + Date.now().toString(36); }
+  function okId(v) { return typeof v === "string" && /^[A-Za-z0-9_-]{4,40}$/.test(v); }
   function today() { return new Date().toISOString().slice(0, 10); }
   function defaults() {
     return {
-      v: 1, name: "", theme: "pink",
+      v: 1, name: "", theme: "pink", prefsAt: 0, gone: [],
       // Two plain example sets to start with. Delete or change them any time!
       sets: [
-        { id: uid(), num: "21019", name: "The Eiffel Tower", theme: "Architecture", status: "want", fav: true, demo: true },
-        { id: uid(), num: "", name: "iPhone Duo set", theme: "", status: "wish", fav: false, demo: true }
+        { id: uid(), num: "21019", name: "The Eiffel Tower", theme: "Architecture", status: "want", fav: true, demo: true, updatedAt: 0 },
+        { id: uid(), num: "", name: "iPhone Duo set", theme: "", status: "wish", fav: false, demo: true, updatedAt: 0 }
       ],
       notes: [{ id: uid(), text: "My next build: the Eiffel Tower! 🗼", color: NOTE_COLORS[0], font: "hand" }],
       pieces: [], sorted: { total: 0, byDay: {} }
@@ -34,13 +35,13 @@
     var base = defaults();
     if (!d || typeof d !== "object") return base;
     var s = {
-      v: 1,
+      v: 1, prefsAt: Math.max(0, parseInt(d.prefsAt, 10) || 0), gone: [],
       name: typeof d.name === "string" ? d.name.slice(0, 30) : "",
       theme: COLORS[d.theme] ? d.theme : "pink",
       sets: Array.isArray(d.sets) ? d.sets.filter(function (x) { return x && typeof x === "object"; }).slice(0, 2000).map(function (x) {
-        return { id: String(x.id || uid()), num: String(x.num || "").slice(0, 20), name: String(x.name || "").slice(0, 80),
+        return { id: okId(x.id) ? String(x.id) : uid(), num: String(x.num || "").slice(0, 20), name: String(x.name || "").slice(0, 80),
           theme: String(x.theme || "").slice(0, 40), status: ["built", "want", "wish"].indexOf(x.status) > -1 ? x.status : "want",
-          fav: !!x.fav, demo: !!x.demo };
+          fav: !!x.fav, demo: !!x.demo, updatedAt: Math.max(0, Math.floor(Number(x.updatedAt)) || 0) };
       }) : base.sets,
       notes: Array.isArray(d.notes) ? d.notes.filter(function (x) { return x && typeof x === "object"; }).slice(0, 200).map(function (x) {
         return { id: String(x.id || uid()), text: String(x.text || "").slice(0, 2000),
@@ -52,6 +53,7 @@
       }) : [],
       sorted: { total: 0, byDay: {} }
     };
+    if (Array.isArray(d.gone)) s.gone = d.gone.filter(function (x) { return x && okId(x.id); }).slice(0, 400).map(function (x) { return { id: String(x.id), deleted: true, updatedAt: Math.max(0, Math.floor(Number(x.updatedAt)) || 0) }; });
     if (d.sorted && typeof d.sorted === "object") {
       s.sorted.total = Math.max(0, parseInt(d.sorted.total, 10) || 0);
       if (d.sorted.byDay && typeof d.sorted.byDay === "object") {
@@ -77,11 +79,14 @@
   function count(st) { return state.sets.filter(function (s) { return s.status === st; }).length; }
   function setStatus(set, theme, st) {
     var ex = findSet(set.n);
-    if (ex && ex.status === st) { state.sets = state.sets.filter(function (s) { return s !== ex; }); }
-    else if (ex) { ex.status = st; ex.demo = false; }
-    else state.sets.unshift({ id: uid(), num: set.n, name: set.name, theme: theme, status: st, fav: false, demo: false });
-    save();
+    if (ex && ex.status === st) { removeSet(ex); }
+    else if (ex) { ex.status = st; ex.demo = false; ex.updatedAt = Date.now(); }
+    else state.sets.unshift({ id: uid(), num: set.n, name: set.name, theme: theme, status: st, fav: false, demo: false, updatedAt: Date.now() });
+    changed();
   }
+  // Removing a set leaves a tiny "deleted" marker so other devices remove it too.
+  function removeSet(s) { state.sets = state.sets.filter(function (x) { return x !== s; }); state.gone.unshift({ id: s.id, deleted: true, updatedAt: Date.now() }); state.gone = state.gone.slice(0, 400); }
+  function changed() { save(); scheduleSync(); }
   function statusPills(num, key) {
     var ex = findSet(num);
     return '<div class="status" role="group" aria-label="Add to my sets">' + STATUSES.map(function (s) {
@@ -126,11 +131,118 @@
   }
 
   var mineFilter = "all";
+
+  // ---------- sync between devices (see README: "How sync works") ----------
+  var SYNC_KEY = "brick-buddy-sync-v1"; // the sync code lives here, NOT in the backup file
+  var sync = { code: "", created: false, last: 0 };
+  try { var sraw = JSON.parse(localStorage.getItem(SYNC_KEY) || "null"); if (sraw && typeof sraw.code === "string" && window.BBSync && BBSync.normalize(sraw.code)) sync = { code: sraw.code, created: !!sraw.created, last: Number(sraw.last) || 0 }; } catch (e) {}
+  var syncState = sync.code ? "idle" : "off"; // off | idle | syncing | ok | offline | error
+  var syncUi = "", syncMsg = "", syncTimer = null, inflight = false, again = false;
+  function saveSync() { try { if (sync.code) localStorage.setItem(SYNC_KEY, JSON.stringify(sync)); else localStorage.removeItem(SYNC_KEY); } catch (e) {} }
+  function payload(create) {
+    var p = { sets: state.sets.map(function (x) { return { id: x.id, num: x.num, name: x.name, theme: x.theme, status: x.status, fav: !!x.fav, demo: !!x.demo, updatedAt: x.updatedAt }; })
+        .concat(state.gone.map(function (g) { return { id: g.id, deleted: true, updatedAt: g.updatedAt }; })),
+      prefs: { name: state.name, theme: state.theme, updatedAt: state.prefsAt } };
+    if (create) p.create = true;
+    return p;
+  }
+  function stampAll(skipPrefs) { var n = Date.now(); state.sets.forEach(function (x) { if (!x.updatedAt) x.updatedAt = n; }); if (!skipPrefs && !state.prefsAt) state.prefsAt = n; }
+  function userIsTyping() { var a = document.activeElement; return !!a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName); }
+  // Mixes what the server sent with what is on this device right now (nothing local is lost).
+  function applyRemote(remote) {
+    var m = BBSync.merge({ sets: payload().sets, prefs: payload().prefs }, remote);
+    var before = JSON.stringify([state.sets, state.theme, state.name]);
+    state.sets = m.sets.filter(function (x) { return !x.deleted; }).map(function (x) { return { id: x.id, num: x.num, name: x.name, theme: x.theme, status: x.status, fav: !!x.fav, demo: !!x.demo, updatedAt: x.updatedAt }; });
+    state.gone = m.sets.filter(function (x) { return x.deleted; }).slice(0, 400).map(function (x) { return { id: x.id, deleted: true, updatedAt: x.updatedAt }; });
+    if (m.prefs && m.prefs.updatedAt >= state.prefsAt && (m.prefs.theme !== state.theme || m.prefs.name !== state.name)) { state.theme = m.prefs.theme; state.name = m.prefs.name; state.prefsAt = m.prefs.updatedAt; }
+    save();
+    setTheme(); hello();
+    if (before !== JSON.stringify([state.sets, state.theme, state.name]) && !userIsTyping()) render();
+  }
+  function setSyncState(st, msg) { syncState = st; if (msg !== undefined) syncMsg = msg; updateSyncUi(); }
+  function ago(t) { var s = Math.max(0, Math.round((Date.now() - t) / 1000)); return s < 10 ? "just now" : s < 60 ? s + "s ago" : s < 3600 ? Math.round(s / 60) + " min ago" : Math.round(s / 3600) + " h ago"; }
+  function syncLabel() {
+    return { off: "", idle: "☁️ sync on", syncing: "☁️ syncing…", ok: "☁️ synced ✓", offline: "📴 offline – saved here, will sync later", error: "⚠️ sync needs a look" }[syncState] || "";
+  }
+  function updateSyncUi() {
+    var pill = document.getElementById("syncpill");
+    if (pill) { pill.textContent = syncLabel(); pill.hidden = !sync.code; pill.setAttribute("data-state", syncState); }
+    var st = document.getElementById("syncstatus");
+    if (st) st.textContent = syncLabel() + (syncState === "ok" && sync.last ? " · " + ago(sync.last) : "") + (syncState === "error" && syncMsg ? " – " + syncMsg : "");
+  }
+  function scheduleSync(delay) { if (!sync.code) return; clearTimeout(syncTimer); syncTimer = setTimeout(function () { syncNow(); }, delay == null ? 1200 : delay); }
+  async function syncNow() {
+    if (!sync.code || !window.BBSync) return;
+    if (inflight) { again = true; return; }
+    inflight = true; setSyncState("syncing");
+    try {
+      var key = await BBSync.keyFor(BBSync.normalize(sync.code));
+      var res = await BBSync.request("PUT", key, payload(!sync.created));
+      if (res.status === 200 && res.data && Array.isArray(res.data.sets)) { sync.created = true; sync.last = Date.now(); saveSync(); applyRemote(res.data); setSyncState("ok"); }
+      else if (res.status === 404) setSyncState("error", "the server doesn’t know this code");
+      else if (res.status === 429 || res.status === 409) setSyncState("offline");
+      else if (res.status === 400 || res.status === 413) setSyncState("error", "too many sets to sync");
+      else setSyncState("offline");
+    } catch (e) { setSyncState("offline"); }
+    inflight = false;
+    if (again) { again = false; scheduleSync(300); }
+  }
+  async function enableSync() {
+    if (!window.BBSync || !BBSync.supported()) { syncMsg = "Sync needs a newer browser."; syncUi = "join"; render(); return; }
+    sync = { code: BBSync.newCode(), created: false, last: 0 };
+    stampAll(); save(); saveSync(); syncUi = "code"; syncMsg = ""; syncState = "idle"; render();
+    syncNow();
+  }
+  async function joinSync(input) {
+    var norm = window.BBSync && BBSync.normalize(input);
+    if (!window.BBSync || !BBSync.supported()) { syncMsg = "Sync needs a newer browser."; render(); return; }
+    if (!norm) { syncMsg = "That doesn’t look like a code. It has 28 letters and numbers, like ABCD-EFGH-…"; render(); return; }
+    syncMsg = "Looking for your code…"; updateJoinMsg();
+    try {
+      var key = await BBSync.keyFor(norm), res = await BBSync.request("GET", key);
+      if (res.status === 404) { syncMsg = "We can’t find that code. Check it and try again."; render(); return; }
+      if (res.status !== 200 || !res.data || !Array.isArray(res.data.sets)) { syncMsg = res.status === 429 ? "Too many tries. Wait a minute." : "Something went wrong. Try again."; render(); return; }
+      // Joining an existing box: untouched example sets would only be noise.
+      state.sets = state.sets.filter(function (x) { return !(x.demo && !x.updatedAt); });
+      sync = { code: BBSync.pretty(norm), created: true, last: Date.now() }; saveSync();
+      stampAll(true); applyRemote(res.data); syncUi = ""; syncMsg = ""; setSyncState("ok"); render(); scheduleSync(200);
+    } catch (e) { syncMsg = "We can’t reach the server. Are you online?"; render(); }
+  }
+  function updateJoinMsg() { var m = document.getElementById("syncjoinmsg"); if (m) m.textContent = syncMsg; }
+  function unlink(silent) { sync = { code: "", created: false, last: 0 }; saveSync(); clearTimeout(syncTimer); syncState = "off"; syncUi = ""; syncMsg = ""; updateSyncUi(); }
+  function copyCode(btn) {
+    var c = sync.code, done = function () { btn.textContent = "Copied! ✓"; setTimeout(function () { btn.textContent = "📋 Copy code"; }, 1800); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(c).then(done, function () { btn.textContent = "Select it and copy"; });
+    else btn.textContent = "Select it and copy";
+  }
+  function syncCard() {
+    var h = '<section class="card sync" aria-labelledby="synch"><h2 id="synch">☁️ Use on more than one device</h2>';
+    if (!window.BBSync || !BBSync.supported()) return h + "<p>Sync needs a newer browser. Your sets are still saved on this device.</p></section>";
+    if (!sync.code) {
+      if (syncUi === "join") {
+        return h + '<form id="syncjoin" autocomplete="off"><p>Type the sync code from your other device.</p><label class="f" for="jc">Sync code</label>' +
+          '<input id="jc" type="text" maxlength="40" placeholder="ABCD-EFGH-JKMN-PQRS-TVWX-YZ01-2345" autocapitalize="characters" autocorrect="off" spellcheck="false" inputmode="text">' +
+          '<p class="demo" id="syncjoinmsg" role="status">' + esc(syncMsg) + '</p><div class="row"><button class="btn" type="submit">Link this device ✨</button><button class="btn ghost" type="button" data-act="sync-cancel">Cancel</button></div></form></section>';
+      }
+      return h + "<p>See the same sets on your phone, tablet and computer. No account needed: you get a secret code.</p>" +
+        '<div class="row"><button class="btn" data-act="sync-on">☁️ Turn on sync</button><button class="btn ghost" data-act="sync-join">🔗 I have a code</button></div></section>';
+    }
+    h += '<p class="syncline"><b id="syncstatus" role="status"></b></p>';
+    if (syncUi === "code") {
+      h += '<p>Your secret sync code. Type it on your other device (My Sets → “I have a code”).</p><p class="code" id="synccode" aria-label="Your sync code">' + sync.code.split("-").map(function (g) { return "<span>" + esc(g) + "</span>"; }).join("-<wbr>") + '</p>' +
+        '<p class="warn">🔒 Anyone who has this code can see and change your sets. Keep it secret, like a password. Don’t post it anywhere.</p>' +
+        '<div class="row"><button class="btn" data-act="sync-copy">📋 Copy code</button><button class="btn ghost" data-act="sync-done">Done</button></div>';
+    } else {
+      h += '<div class="row"><button class="btn small" data-act="sync-now">🔄 Sync now</button><button class="btn ghost small" data-act="sync-show">🔑 Show my code</button><button class="btn danger small" data-act="sync-off">Stop syncing here</button></div>';
+    }
+    return h + "</section>";
+  }
+
   function viewMine() {
     var built = count("built"), n5 = Math.max(5, Math.ceil((built + 1) / 5) * 5);
     var stack = ""; for (var i = 0; i < n5; i++) stack += '<i class="' + (i < built ? "" : "off") + '"></i>';
     var shown = state.sets.filter(function (s) { return mineFilter === "all" || (mineFilter === "fav" ? s.fav : s.status === mineFilter); });
-    var h = '<h1 class="page-title">My Sets ⭐✨</h1><p class="lead">Your own LEGO® collection. Saved only on this device.</p>' +
+    var h = '<h1 class="page-title">My Sets ⭐✨</h1><p class="lead">Your own LEGO® collection. Saved on this device' + (sync.code ? " and shared with the devices you linked." : ".") + '</p>' + syncCard() +
       '<div class="stats"><div class="card stat"><b>' + built + "</b><span>✅ Built</span></div><div class=\"card stat\"><b>" + count("want") + "</b><span>🔨 To build</span></div><div class=\"card stat\"><b>" + count("wish") + "</b><span>💖 Wishlist</span></div></div>" +
       '<div class="card"><b>' + built + " built! " + (n5 - built) + ' more to reach ' + n5 + ' 🎉</b><div class="stack" aria-hidden="true">' + stack + "</div>" +
       '<form id="addset" class="row" autocomplete="off"><div class="grow"><label class="f" for="sn">Set name</label><input id="sn" type="text" maxlength="80" required placeholder="e.g. Flower Bouquet"></div>' +
@@ -197,7 +309,7 @@
     var h = '<h1 class="page-title">Studio 🎨✨</h1><p class="lead">Make this app yours: pick a colour, say your name, and write build notes.</p>' +
       '<div class="card"><h2 style="font-size:1.2rem">🎨 Paint the app ✨</h2><div class="themes" role="group" aria-label="App colour">' + Object.keys(COLORS).map(function (c) {
         return '<button class="swatch" style="--sw:' + COLORS[c] + '" data-act="paint" data-c="' + c + '" title="' + COLOR_NAMES[c] + '" aria-label="' + COLOR_NAMES[c] + '" aria-pressed="' + (state.theme === c) + '"></button>'; }).join("") + "</div>" +
-      '<div style="margin-top:14px;max-width:360px"><label class="f" for="nm">What should we call you? (stays on this device)</label><input id="nm" type="text" maxlength="30" placeholder="Your name" value="' + esc(state.name) + '"></div></div>' +
+      '<div style="margin-top:14px;max-width:360px"><label class="f" for="nm">What should we call you? (saved on this device, and shared only with devices you link)</label><input id="nm" type="text" maxlength="30" placeholder="Your name" value="' + esc(state.name) + '"></div></div>' +
       '<div class="blue-grid" style="margin-top:18px"><h2>📝 My build notes</h2><p>Plans, ideas and lists. Pick a colour and a font for each note.</p><button class="btn" data-act="addnote" style="background:#f4f8ff;color:#241f22">➕ New note</button>' +
       '<div class="notes">' + (state.notes.length ? state.notes.map(function (n) {
         return '<div class="note" style="--nc:' + n.color + '"><textarea class="f-' + n.font + '" data-note="' + n.id + '" maxlength="2000" aria-label="Note text" placeholder="Write something…">' + esc(n.text) + '</textarea><div class="row">' +
@@ -222,7 +334,7 @@
     Array.prototype.forEach.call(document.querySelectorAll(".tabs a"), function (a) {
       var on = a.getAttribute("data-tab") === tab; a.classList.toggle("on", on); if (on) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
     });
-    setTheme(); hello();
+    setTheme(); hello(); updateSyncUi();
   }
   function go() { window.scrollTo(0, 0); render(); }
   window.addEventListener("hashchange", go);
@@ -240,9 +352,9 @@
       var all = []; THEMES.forEach(function (t) { t.sets.forEach(function (x) { all.push(slug(t.name)); }); });
       if (all.length) location.hash = "#/browse/" + all[Math.floor(Math.random() * all.length)];
     } else if (act === "filter") { mineFilter = b.getAttribute("data-f"); render(); }
-    else if (act === "fav") { s = state.sets.filter(function (x) { return x.id === id; })[0]; if (s) { s.fav = !s.fav; save(); render(); } }
-    else if (act === "mystatus") { s = state.sets.filter(function (x) { return x.id === id; })[0]; if (s) { s.status = b.getAttribute("data-st"); s.demo = false; save(); render(); } }
-    else if (act === "del") { if (confirm("Remove this set from My Sets?")) { state.sets = state.sets.filter(function (x) { return x.id !== id; }); save(); render(); } }
+    else if (act === "fav") { s = state.sets.filter(function (x) { return x.id === id; })[0]; if (s) { s.fav = !s.fav; s.updatedAt = Date.now(); changed(); render(); } }
+    else if (act === "mystatus") { s = state.sets.filter(function (x) { return x.id === id; })[0]; if (s) { s.status = b.getAttribute("data-st"); s.demo = false; s.updatedAt = Date.now(); changed(); render(); } }
+    else if (act === "del") { if (confirm("Remove this set from My Sets?")) { var ds = state.sets.filter(function (x) { return x.id === id; })[0]; if (ds) removeSet(ds); changed(); render(); } }
     else if (act === "export") { exportData(); }
     else if (act === "next") {
       if (sortStep === 2) { var dd = today(); state.sorted.total++; state.sorted.byDay[dd] = (state.sorted.byDay[dd] || 0) + 1; save(); }
@@ -253,11 +365,18 @@
     else if (act === "again") { sortStep = 0; render(); }
     else if (act === "delpiece") { state.pieces = state.pieces.filter(function (x) { return x.id !== id; }); save(); render(); }
     else if (act === "clearpieces") { if (confirm("Clear all saved pieces?")) { state.pieces = []; save(); render(); } }
-    else if (act === "paint") { state.theme = b.getAttribute("data-c"); save(); render(); }
+    else if (act === "paint") { state.theme = b.getAttribute("data-c"); state.prefsAt = Date.now(); changed(); render(); }
     else if (act === "addnote") { state.notes.unshift({ id: uid(), text: "", color: NOTE_COLORS[state.notes.length % NOTE_COLORS.length], font: "hand" }); save(); render(); }
     else if (act === "delnote") { if (confirm("Delete this note?")) { state.notes = state.notes.filter(function (x) { return x.id !== id; }); save(); render(); } }
     else if (act === "ncolor") { var n = state.notes.filter(function (x) { return x.id === id; })[0]; if (n) { n.color = b.getAttribute("data-c"); save(); render(); } }
-    else if (act === "reset") { if (confirm("Start over? This removes your sets, notes and pieces from this device.")) { state = defaults(); save(); sortStep = 0; render(); } }
+    else if (act === "reset") { if (confirm("Start over? This removes your sets, notes and pieces from this device" + (sync.code ? " and stops syncing here (your other devices keep their sets)." : "."))) { state = defaults(); save(); unlink(true); sortStep = 0; render(); } }
+    else if (act === "sync-on") { enableSync(); }
+    else if (act === "sync-join") { syncUi = "join"; syncMsg = ""; render(); }
+    else if (act === "sync-cancel" || act === "sync-done") { syncUi = ""; syncMsg = ""; render(); }
+    else if (act === "sync-show") { syncUi = "code"; render(); }
+    else if (act === "sync-copy") { copyCode(b); }
+    else if (act === "sync-now") { syncNow(); }
+    else if (act === "sync-off") { if (confirm("Stop syncing on this device? Your sets stay here. Your other devices keep their sets too.")) { unlink(); render(); } }
   });
   app.addEventListener("change", function (e) {
     var t = e.target;
@@ -267,7 +386,7 @@
   app.addEventListener("input", function (e) {
     var t = e.target;
     if (t.id === "q") { qVal = t.value; var pos = t.selectionStart; render(); var q = document.getElementById("q"); if (q) { q.focus(); try { q.setSelectionRange(pos, pos); } catch (x) {} } }
-    else if (t.id === "nm") { state.name = t.value.slice(0, 30); save(); hello(); }
+    else if (t.id === "nm") { state.name = t.value.slice(0, 30); state.prefsAt = Date.now(); changed(); hello(); }
     else if (t.hasAttribute("data-note")) { var n = state.notes.filter(function (x) { return x.id === t.getAttribute("data-note"); })[0]; if (n) { n.text = t.value; save(); } }
   });
   app.addEventListener("submit", function (e) {
@@ -276,8 +395,10 @@
       var name = document.getElementById("sn").value.trim(); if (!name) return;
       var num = document.getElementById("sno").value.trim().replace(/-\d+$/, "");
       var known = null; THEMES.forEach(function (t) { t.sets.forEach(function (s) { if (num && s.n === num) known = t.name; }); });
-      state.sets.unshift({ id: uid(), num: num, name: name, theme: known || "", status: document.getElementById("sst").value, fav: false, demo: false });
-      save(); render();
+      state.sets.unshift({ id: uid(), num: num, name: name, theme: known || "", status: document.getElementById("sst").value, fav: false, demo: false, updatedAt: Date.now() });
+      changed(); render();
+    } else if (e.target.id === "syncjoin") {
+      joinSync(document.getElementById("jc").value);
     } else if (e.target.id === "pieceform") {
       var part = document.getElementById("pp").value.trim(); if (!part) return;
       state.pieces.unshift({ id: uid(), part: part, name: document.getElementById("pn").value.trim(), colour: document.getElementById("pc").value.trim() });
@@ -294,11 +415,22 @@
   function importData(file) {
     var r = new FileReader();
     r.onload = function () {
-      try { var d = JSON.parse(r.result); if (!d || typeof d !== "object" || !Array.isArray(d.sets)) throw new Error("bad"); state = clean(d); save(); render(); alert("Your backup is loaded! 🎉"); }
+      try { var d = JSON.parse(r.result); if (!d || typeof d !== "object" || !Array.isArray(d.sets)) throw new Error("bad"); var nowT = Date.now(), imp = clean(d), ids = {};
+        imp.sets.forEach(function (x) { ids[x.id] = 1; x.updatedAt = nowT; });
+        state.sets.forEach(function (x) { if (!ids[x.id]) state.gone.unshift({ id: x.id, deleted: true, updatedAt: nowT }); });
+        imp.gone = state.gone.filter(function (g) { return !ids[g.id]; }).slice(0, 400);
+        imp.prefsAt = nowT; state = imp; changed(); render(); alert("Your backup is loaded! 🎉"); }
       catch (err) { alert("Hmm, that file doesn’t look like a Mission Control backup."); }
     };
     r.readAsText(file);
   }
+
+  // keep devices in step: on load, when the tab comes back, when the network returns, and every 30 s while open
+  if (sync.code) scheduleSync(400);
+  window.addEventListener("online", function () { scheduleSync(200); });
+  window.addEventListener("offline", function () { if (sync.code) setSyncState("offline"); });
+  document.addEventListener("visibilitychange", function () { if (!document.hidden) scheduleSync(300); });
+  setInterval(function () { if (sync.code && !document.hidden) syncNow(); }, 30000);
 
   render();
 })();
