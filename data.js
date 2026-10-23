@@ -1,4 +1,4 @@
-// Brick Buddy – a tiny, hand-curated list of theme names and set names.
+// Olöf's Lego Girly Mission Control – a tiny, hand-curated list of theme names and set names.
 // Theme names come from BrickLink's public "Reference Catalog – Sets" category tree
 // (https://www.bricklink.com/catalogTree.asp?itemType=S). Counts are approximate
 // ("about N sets on BrickLink") and were typed by hand. No images or other BrickLink

@@ -1,4 +1,4 @@
-/* Brick Buddy – plain JavaScript, no frameworks, no servers.
+/* Olöf's Lego Girly Mission Control – plain JavaScript, no frameworks, no servers.
    Everything you save lives in this browser's localStorage. */
 (function () {
   "use strict";
@@ -193,7 +193,7 @@
 
   var FONTS = [["rounded", "Round"], ["hand", "Handwriting"], ["serif", "Fancy"], ["bold", "Bold"]];
   function viewStudio() {
-    var h = '<h1 class="page-title">Studio 🎨</h1><p class="lead">Make Brick Buddy yours: pick a colour, say your name, and write build notes.</p>' +
+    var h = '<h1 class="page-title">Studio 🎨</h1><p class="lead">Make this app yours: pick a colour, say your name, and write build notes.</p>' +
       '<div class="card"><h2 style="font-size:1.2rem">🎨 Paint the app</h2><div class="themes" role="group" aria-label="App colour">' + Object.keys(COLORS).map(function (c) {
         return '<button class="swatch" style="--sw:' + COLORS[c] + '" data-act="paint" data-c="' + c + '" aria-label="' + c + '" aria-pressed="' + (state.theme === c) + '"></button>'; }).join("") + "</div>" +
       '<div style="margin-top:14px;max-width:360px"><label class="f" for="nm">What should we call you? (stays on this device)</label><input id="nm" type="text" maxlength="30" placeholder="Your name" value="' + esc(state.name) + '"></div></div>' +
@@ -203,7 +203,7 @@
           '<div class="swatches" role="group" aria-label="Note colour">' + NOTE_COLORS.map(function (c) { return '<button class="swatch" style="--sw:' + c + '" data-act="ncolor" data-id="' + n.id + '" data-c="' + c + '" aria-label="Colour ' + c + '" aria-pressed="' + (n.color === c) + '"></button>'; }).join("") + "</div>" +
           '<select data-act="nfont" data-id="' + n.id + '" aria-label="Font">' + FONTS.map(function (f) { return '<option value="' + f[0] + '"' + (n.font === f[0] ? " selected" : "") + ">" + f[1] + "</option>"; }).join("") + "</select>" +
           '<button class="btn danger small" data-act="delnote" data-id="' + n.id + '" aria-label="Delete note">🗑</button></div></div>'; }).join("") : '<div class="empty" style="grid-column:1/-1;color:#241f22">No notes yet.</div>') + "</div></div>" +
-      '<div class="card" style="margin-top:18px"><h2 style="font-size:1.2rem">About</h2><p style="margin:6px 0 0">Brick Buddy is a free fan app. Theme names and set links come from <a href="' + BL_TREE + '" target="_blank" rel="noopener noreferrer">BrickLink</a>; pictures and details stay on BrickLink. LEGO® and BrickLink™ belong to their owners. No accounts, no tracking. <button class="btn danger small" data-act="reset" style="margin-left:6px">Start over</button></p></div>';
+      '<div class="card" style="margin-top:18px"><h2 style="font-size:1.2rem">About</h2><p style="margin:6px 0 0">This is a free fan app. Theme names and set links come from <a href="' + BL_TREE + '" target="_blank" rel="noopener noreferrer">BrickLink</a>; pictures and details stay on BrickLink. LEGO® and BrickLink™ belong to their owners. No accounts, no tracking. <button class="btn danger small" data-act="reset" style="margin-left:6px">Start over</button></p></div>';
     return h;
   }
 
@@ -287,14 +287,14 @@
 
   function exportData() {
     var blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
-    var a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "my-brick-buddy-backup.json";
+    var a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "olofs-mission-control-backup.json";
     document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
   }
   function importData(file) {
     var r = new FileReader();
     r.onload = function () {
       try { var d = JSON.parse(r.result); if (!d || typeof d !== "object" || !Array.isArray(d.sets)) throw new Error("bad"); state = clean(d); save(); render(); alert("Your backup is loaded! 🎉"); }
-      catch (err) { alert("Hmm, that file doesn’t look like a Brick Buddy backup."); }
+      catch (err) { alert("Hmm, that file doesn’t look like a Mission Control backup."); }
     };
     r.readAsText(file);
   }

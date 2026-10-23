@@ -1,4 +1,4 @@
-# 🧱 Brick Buddy
+# 🧱 Olöf's Lego Girly Mission Control
 
 A fun, free **LEGO® fan app** for kids (and grown-ups): browse sets by theme, keep track of the sets you built, sort loose bricks, find which sets a piece comes in, and write build notes.
 
@@ -16,7 +16,7 @@ It is **one tiny web page** (HTML + CSS + plain JavaScript). No accounts, no tra
 
 ## Where the ideas come from
 
-Brick Buddy combines four things:
+This app combines four things:
 
 1. a **LEGO Piece Set Finder** app (Grok app) – piece search, saved pieces, building-instruction links;
 2. **BrickLink's public set-catalog tree** – the theme and sub-theme *names*;
@@ -26,7 +26,7 @@ Brick Buddy combines four things:
 ## Data, attributions and trademarks
 
 - **Data and links from [BrickLink](https://www.bricklink.com/catalogTree.asp?itemType=S).** Theme/sub-theme names follow BrickLink's public *Reference Catalog – Sets* tree. The set list in `data.js` is a **small, hand-typed list** (set number + name). Counts like "about 73 sets" are approximate.
-- **No scraping and no copied pictures.** Brick Buddy does not download or re-host BrickLink data or images. It only **links out** to BrickLink (and to LEGO's building-instructions pages) for details and pictures.
+- **No scraping and no copied pictures.** This app does not download or re-host BrickLink data or images. It only **links out** to BrickLink (and to LEGO's building-instructions pages) for details and pictures.
 - Brick scanning is done by [Brickognize](https://brickognize.com/) on their own site.
 - **LEGO® is a trademark of the LEGO Group. BrickLink™ is a trademark of its owner. This is an unofficial fan app, not affiliated with or endorsed by LEGO or BrickLink.**
 - No cookies, no analytics, no ads, no third-party scripts, no web fonts. The only network requests are the app's own files.
@@ -47,7 +47,7 @@ There is nothing to build or install. You can also just double-click `index.html
 **The easy way – ask the Grok app (with a grown-up for the first time):**
 
 1. Open the Grok app and start a new chat.
-2. Paste the link to the app, or paste the code from `index.html`, `styles.css`, `data.js` and `app.js`.
+2. Say you want to remix **Olöf's Lego Girly Mission Control**, then paste the link to the app, or paste the code from `index.html`, `styles.css`, `data.js` and `app.js`.
 3. Tell Grok what you want. Try:
    - *"Make it purple."*
    - *"Add my sets: …"* (type the names and numbers)
