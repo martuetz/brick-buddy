@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Olöf's Lego Girly Mission Control</title>
   <meta name="description" content="A fun, free LEGO fan app: browse sets by theme, track the sets you built, sort loose bricks, and keep build notes. Everything stays in your browser." />
-  <meta name="theme-color" content="#f174a0" />
+  <meta name="theme-color" content="#ffb3cf" />
   <meta name="referrer" content="no-referrer" />
   <meta name="application-name" content="Olöf's Lego Girly Mission Control" />
   <meta name="apple-mobile-web-app-title" content="Olöf's Mission Control" />
@@ -15,12 +15,45 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <header class="top">
-    <a class="logo" href="#/browse" aria-label="Olöf's Lego Girly Mission Control – home">
-      <span class="logo-brick" aria-hidden="true"><i></i><i></i><i></i></span>
-      <span class="logo-text">Olöf's Lego Girly Mission Control</span>
-    </a>
-    <p class="hello" id="hello"></p>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+    <symbol id="spark" viewBox="0 0 24 24"><path d="M12 0C13 8 16 11 24 12C16 13 13 16 12 24C11 16 8 13 0 12C8 11 11 8 12 0Z"/></symbol>
+    <symbol id="bow" viewBox="0 0 44 30"><g stroke="#2b2230" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round">
+      <path d="M22 15C14 2 3 0 2 10C1 21 12 28 22 15Z" fill="#e3342f"/><path d="M22 15C30 2 41 0 42 10C43 21 32 28 22 15Z" fill="#e3342f"/>
+      <path d="M9 9C12 8 16 10 18 13" fill="none" stroke="#ff9a96" stroke-width="2"/><path d="M35 9C32 8 28 10 26 13" fill="none" stroke="#ff9a96" stroke-width="2"/>
+      <ellipse cx="22" cy="15" rx="4.6" ry="5.6" fill="#c22621"/></g></symbol>
+  </defs></svg>
+
+  <header class="hero">
+    <svg class="sp s1" aria-hidden="true"><use href="#spark"/></svg><svg class="sp s2" aria-hidden="true"><use href="#spark"/></svg><svg class="sp s3" aria-hidden="true"><use href="#spark"/></svg>
+    <svg class="girl" viewBox="0 0 140 150" aria-hidden="true" focusable="false">
+      <defs><clipPath id="tee"><path d="M14 150C16 124 40 110 70 110C100 110 124 124 126 150Z"/></clipPath></defs>
+      <g stroke="#2b2230" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round">
+        <path d="M96 30C128 18 144 50 128 84C120 100 128 110 112 120C118 102 106 94 102 72Z" fill="#f6c453"/>
+        <ellipse cx="70" cy="64" rx="45" ry="46" fill="#f6c453"/>
+        <g clip-path="url(#tee)"><rect x="0" y="100" width="140" height="50" fill="#fff"/>
+          <rect x="0" y="116" width="140" height="8" fill="#ff8fb8" stroke="none"/><rect x="0" y="132" width="140" height="8" fill="#ff8fb8" stroke="none"/><rect x="0" y="146" width="140" height="8" fill="#ff8fb8" stroke="none"/></g>
+        <path d="M14 150C16 124 40 110 70 110C100 110 124 124 126 150" fill="none"/>
+        <path d="M60 98h20v16Q70 124 60 114Z" fill="#ffd9bf"/>
+        <ellipse cx="70" cy="70" rx="33" ry="35" fill="#ffd9bf"/>
+        <path d="M36 66C34 38 54 26 72 28C92 28 106 42 104 66C96 54 86 48 72 48C58 48 46 54 36 66Z" fill="#f6c453"/>
+        <circle cx="48" cy="84" r="6" fill="#ff9fbf" stroke="none" opacity=".75"/><circle cx="92" cy="84" r="6" fill="#ff9fbf" stroke="none" opacity=".75"/>
+        <circle cx="55" cy="70" r="13.5" fill="#fff"/><circle cx="85" cy="70" r="13.5" fill="#fff"/>
+        <path d="M68.5 69Q70 66 71.5 69" fill="none"/>
+        <circle cx="57" cy="71" r="5" fill="#2b2230" stroke="none"/><circle cx="83" cy="71" r="5" fill="#2b2230" stroke="none"/>
+        <circle cx="58.6" cy="69" r="1.6" fill="#fff" stroke="none"/><circle cx="84.6" cy="69" r="1.6" fill="#fff" stroke="none"/>
+        <path d="M57 90Q70 106 83 90Z" fill="#d6336c"/><path d="M62 95Q70 99 78 95" fill="none" stroke="#ff9fbf" stroke-width="2"/>
+        <path d="M66 80q4 3 8 0" fill="none" stroke-width="2"/>
+        <g transform="translate(70 27) scale(1.1) translate(-22 -15)"><use href="#bow" x="0" y="0" width="44" height="30" stroke="none"/></g>
+      </g>
+    </svg>
+    <div class="hero-text">
+      <a class="logo" href="#/browse" aria-label="Olöf's Lego Girly Mission Control – home">
+        <svg class="logo-bow" viewBox="0 0 44 30" aria-hidden="true" focusable="false"><use href="#bow"/></svg>
+        <span class="logo-text">Olöf's Lego Girly <span class="hl">Mission Control</span></span>
+      </a>
+      <p class="hello" id="hello"></p>
+      <div class="studs-row" aria-hidden="true"><i style="--c:#e3342f"></i><i style="--c:#ffd23f"></i><i style="--c:#2d6bdb"></i><i style="--c:#2fa84f"></i></div>
+    </div>
   </header>
 
   <main id="app" tabindex="-1" aria-live="polite"></main>
@@ -33,12 +66,15 @@
     <a href="#/studio"  data-tab="studio"><span aria-hidden="true">🎨</span><b>Studio</b></a>
   </nav>
 
-  <footer class="legal">
-    <p>Data and links from <a href="https://www.bricklink.com/catalogTree.asp?itemType=S" target="_blank" rel="noopener noreferrer">BrickLink</a>.
-    LEGO® and BrickLink™ are trademarks of their owners. This is a fan-made app and is not affiliated with, or endorsed by, the LEGO Group or BrickLink.
-    Brick scanning by <a href="https://brickognize.com/" target="_blank" rel="noopener noreferrer">Brickognize</a>.
-    No accounts, no tracking: your stuff is saved only in this browser.</p>
-  </footer>
+  <div class="baseplate-wrap">
+    <div class="loose" aria-hidden="true"><i style="--c:#e3342f"></i><i style="--c:#ffd23f" class="b2"></i><i style="--c:#2d6bdb"></i><i style="--c:#2fa84f" class="b2"></i><i style="--c:#ff8fb8"></i></div>
+    <footer class="legal baseplate">
+      <p>Data and links from <a href="https://www.bricklink.com/catalogTree.asp?itemType=S" target="_blank" rel="noopener noreferrer">BrickLink</a>.
+      LEGO® and BrickLink™ are trademarks of their owners. This is a fan-made app and is not affiliated with, or endorsed by, the LEGO Group or BrickLink.
+      Brick scanning by <a href="https://brickognize.com/" target="_blank" rel="noopener noreferrer">Brickognize</a>.
+      No accounts, no tracking: your stuff is saved only in this browser. ✨</p>
+    </footer>
+  </div>
 
   <script src="data.js"></script>
   <script src="app.js"></script>

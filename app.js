@@ -10,7 +10,8 @@
   var LEGO_HELP = "https://www.lego.com/en-us/service/buildinginstructions/";
   var BRICKOGNIZE = "https://brickognize.com/";
   var THEMES = window.BB_THEMES || [];
-  var COLORS = { pink: "#f174a0", blue: "#2f5bff", purple: "#9b5de5", green: "#2fb36d", yellow: "#f5c400", red: "#e45745" };
+  var COLORS = { pink: "#ff8fb8", blue: "#8fd3ee", purple: "#b78cf0", green: "#2fa84f", yellow: "#ffd23f", red: "#e3342f" };
+  var COLOR_NAMES = { pink: "Girly pink (the original look)", blue: "Baby blue", purple: "Lavender", green: "Baseplate green", yellow: "Sunny yellow", red: "LEGO red" };
   var NOTE_COLORS = ["#f6e7a2", "#ffd0e1", "#cfe2ff", "#cdeed8", "#e6d5ff"];
   var STATUSES = [["built", "✅ Built"], ["want", "🔨 Want to build"], ["wish", "💖 Wishlist"]];
 
@@ -98,7 +99,7 @@
       return x.name.toLowerCase().indexOf(q) > -1 || x.sub.join(" ").toLowerCase().indexOf(q) > -1 ||
         x.sets.some(function (s) { return (s.name + " " + s.n).toLowerCase().indexOf(q) > -1; });
     });
-    var h = '<h1 class="page-title">Pick a theme! 🧱</h1><p class="lead">Browse LEGO® themes, find sets, and add them to your collection.</p>' +
+    var h = '<h1 class="page-title">Pick a theme! 🧱✨</h1><p class="lead">Browse LEGO® themes, find sets, and add them to your collection.</p>' +
       '<div class="row"><div class="grow"><label class="f" for="q">Search themes or sets</label><input id="q" type="search" placeholder="Try: Eiffel, Disney, Mario…" value="' + esc(q) + '" autocomplete="off"></div>' +
       '<button class="btn" data-act="random" style="align-self:flex-end">🎲 Surprise me!</button></div>';
     h += list.length ? '<div class="tiles">' + list.map(function (x) {
@@ -129,7 +130,7 @@
     var built = count("built"), n5 = Math.max(5, Math.ceil((built + 1) / 5) * 5);
     var stack = ""; for (var i = 0; i < n5; i++) stack += '<i class="' + (i < built ? "" : "off") + '"></i>';
     var shown = state.sets.filter(function (s) { return mineFilter === "all" || (mineFilter === "fav" ? s.fav : s.status === mineFilter); });
-    var h = '<h1 class="page-title">My Sets ⭐</h1><p class="lead">Your own LEGO® collection. Saved only on this device.</p>' +
+    var h = '<h1 class="page-title">My Sets ⭐✨</h1><p class="lead">Your own LEGO® collection. Saved only on this device.</p>' +
       '<div class="stats"><div class="card stat"><b>' + built + "</b><span>✅ Built</span></div><div class=\"card stat\"><b>" + count("want") + "</b><span>🔨 To build</span></div><div class=\"card stat\"><b>" + count("wish") + "</b><span>💖 Wishlist</span></div></div>" +
       '<div class="card"><b>' + built + " built! " + (n5 - built) + ' more to reach ' + n5 + ' 🎉</b><div class="stack" aria-hidden="true">' + stack + "</div>" +
       '<form id="addset" class="row" autocomplete="off"><div class="grow"><label class="f" for="sn">Set name</label><input id="sn" type="text" maxlength="80" required placeholder="e.g. Flower Bouquet"></div>' +
@@ -175,7 +176,7 @@
   function sortStats(d) { return '<p class="lead" style="margin-top:14px">Bricks sorted today: <b>' + d + "</b> · Total: <b>" + state.sorted.total + "</b></p>"; }
 
   function viewPieces() {
-    var h = '<h1 class="page-title">Piece Finder 🔎</h1><p class="lead">Found a piece? Type its BrickLink number and we’ll open BrickLink so you can see which sets it comes in.</p>' +
+    var h = '<h1 class="page-title">Piece Finder 🔎✨</h1><p class="lead">Found a piece? Type its BrickLink number and we’ll open BrickLink so you can see which sets it comes in.</p>' +
       '<form id="pieceform" class="card" autocomplete="off"><div class="row">' +
       '<div class="grow"><label class="f" for="pp">BrickLink ID / code</label><input id="pp" type="text" required maxlength="40" placeholder="e.g. 35044" autocapitalize="off" autocorrect="off" spellcheck="false"></div>' +
       '<div class="grow"><label class="f" for="pn">Piece name (optional)</label><input id="pn" type="text" maxlength="80" placeholder="e.g. Plate 1 x 2"></div>' +
@@ -193,9 +194,9 @@
 
   var FONTS = [["rounded", "Round"], ["hand", "Handwriting"], ["serif", "Fancy"], ["bold", "Bold"]];
   function viewStudio() {
-    var h = '<h1 class="page-title">Studio 🎨</h1><p class="lead">Make this app yours: pick a colour, say your name, and write build notes.</p>' +
-      '<div class="card"><h2 style="font-size:1.2rem">🎨 Paint the app</h2><div class="themes" role="group" aria-label="App colour">' + Object.keys(COLORS).map(function (c) {
-        return '<button class="swatch" style="--sw:' + COLORS[c] + '" data-act="paint" data-c="' + c + '" aria-label="' + c + '" aria-pressed="' + (state.theme === c) + '"></button>'; }).join("") + "</div>" +
+    var h = '<h1 class="page-title">Studio 🎨✨</h1><p class="lead">Make this app yours: pick a colour, say your name, and write build notes.</p>' +
+      '<div class="card"><h2 style="font-size:1.2rem">🎨 Paint the app ✨</h2><div class="themes" role="group" aria-label="App colour">' + Object.keys(COLORS).map(function (c) {
+        return '<button class="swatch" style="--sw:' + COLORS[c] + '" data-act="paint" data-c="' + c + '" title="' + COLOR_NAMES[c] + '" aria-label="' + COLOR_NAMES[c] + '" aria-pressed="' + (state.theme === c) + '"></button>'; }).join("") + "</div>" +
       '<div style="margin-top:14px;max-width:360px"><label class="f" for="nm">What should we call you? (stays on this device)</label><input id="nm" type="text" maxlength="30" placeholder="Your name" value="' + esc(state.name) + '"></div></div>' +
       '<div class="blue-grid" style="margin-top:18px"><h2>📝 My build notes</h2><p>Plans, ideas and lists. Pick a colour and a font for each note.</p><button class="btn" data-act="addnote" style="background:#f4f8ff;color:#241f22">➕ New note</button>' +
       '<div class="notes">' + (state.notes.length ? state.notes.map(function (n) {

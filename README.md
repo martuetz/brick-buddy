@@ -4,6 +4,12 @@ A fun, free **LEGO® fan app** for kids (and grown-ups): browse sets by theme, k
 
 It is **one tiny web page** (HTML + CSS + plain JavaScript). No accounts, no tracking, no servers. Everything you save stays **in your own browser** (`localStorage`).
 
+## Look and feel
+
+A bright, cheerful cartoon style: **pastel pink + baby blue**, with **LEGO red / yellow / blue / green** accents, brick-stud patterns, little sparkles ✨, a **red bow** logo, a cute header drawing of a girl with a red bow and round glasses, and a **green baseplate** footer. All the art is original SVG drawn in code (`index.html`, `styles.css`, `favicon.svg`). It is a generic cartoon, not a likeness of a real person, and there are no photo files in this repo.
+
+The **🎨 Studio** tab can repaint everything: Girly pink (the default), Baby blue, Lavender, Baseplate green, Sunny yellow, LEGO red. To change the colours yourself, edit the variables at the top of `styles.css`.
+
 ## What's inside
 
 | Tab | What it does |
@@ -12,7 +18,7 @@ It is **one tiny web page** (HTML + CSS + plain JavaScript). No accounts, no tra
 | ⭐ **My Sets** | Your collection with counters, a "next 5 sets" brick stack, favourites, your own sets, and backup / load backup files. |
 | 🧩 **Sort** | *One brick. Three moves.* A little ritual: open Brickognize → scan the brick → match the set. Counts the bricks you sorted. |
 | 🔎 **Pieces** | Type a BrickLink part number and open BrickLink to see which sets it comes in. Keeps a saved-pieces list. |
-| 🎨 **Studio** | Paint the whole app in 6 colours, type your name (kept on your device), and make coloured build notes with different fonts. |
+| 🎨 **Studio** | Paint the whole app in 6 colour moods, type your name (kept on your device), and make coloured build notes with different fonts. |
 
 ## Where the ideas come from
 
