@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="pink">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Brick Buddy – my LEGO app</title>
+  <meta name="description" content="A fun, free LEGO fan app: browse sets by theme, track the sets you built, sort loose bricks, and keep build notes. Everything stays in your browser." />
+  <meta name="theme-color" content="#f174a0" />
+  <meta name="referrer" content="no-referrer" />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="top">
+    <a class="logo" href="#/browse" aria-label="Brick Buddy home">
+      <span class="logo-brick" aria-hidden="true"><i></i><i></i><i></i></span>
+      <span class="logo-text">Brick Buddy</span>
+    </a>
+    <p class="hello" id="hello"></p>
+  </header>
+
+  <main id="app" tabindex="-1" aria-live="polite"></main>
+
+  <nav class="tabs" aria-label="Main">
+    <a href="#/browse"  data-tab="browse"><span aria-hidden="true">🧱</span><b>Sets</b></a>
+    <a href="#/mine"    data-tab="mine"><span aria-hidden="true">⭐</span><b>My Sets</b></a>
+    <a href="#/sort"    data-tab="sort"><span aria-hidden="true">🧩</span><b>Sort</b></a>
+    <a href="#/pieces"  data-tab="pieces"><span aria-hidden="true">🔎</span><b>Pieces</b></a>
+    <a href="#/studio"  data-tab="studio"><span aria-hidden="true">🎨</span><b>Studio</b></a>
+  </nav>
+
+  <footer class="legal">
+    <p>Data and links from <a href="https://www.bricklink.com/catalogTree.asp?itemType=S" target="_blank" rel="noopener noreferrer">BrickLink</a>.
+    LEGO® and BrickLink™ are trademarks of their owners. Brick Buddy is a fan-made app and is not affiliated with, or endorsed by, the LEGO Group or BrickLink.
+    Brick scanning by <a href="https://brickognize.com/" target="_blank" rel="noopener noreferrer">Brickognize</a>.
+    No accounts, no tracking: your stuff is saved only in this browser.</p>
+  </footer>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
